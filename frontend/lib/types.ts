@@ -21,6 +21,8 @@ export type BIAnswer = {
   supporting_cases: SupportingCase[];
   trait_scores: Record<string, number>;
   guardrail_note: string | null;
+  agentic_workflow: { phase: string; agent: string; action: string }[];
+  billionaire_time_saver: string;
 };
 
 export type ChatResponse = {

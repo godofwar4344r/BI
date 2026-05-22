@@ -34,6 +34,8 @@ class BIAnswer(BaseModel):
     supporting_cases: list[SupportingCase]
     trait_scores: dict[str, float]
     guardrail_note: str | None = None
+    agentic_workflow: list[dict[str, str]] = Field(default_factory=list)
+    billionaire_time_saver: str = ""
 
 
 class ChatResponse(BaseModel):

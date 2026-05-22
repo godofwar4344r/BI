@@ -45,6 +45,66 @@ WEAK_ALTERNATIVES = {
     "general_strategy": "Copy a billionaire anecdote without checking context, constraints, or ethical boundaries.",
 }
 
+AGENTIC_WORKFLOWS = {
+    "build_vs_buy": [
+        {"phase": "Phase 1: The Bottleneck Assessor", "agent": "Core Moat Auditor", "action": "Map core capabilities. Determine if this system is a strategic competitive advantage. Veto internal building if it is a commodity utility function."},
+        {"phase": "Phase 2: The Cost-of-Learning Auditor", "agent": "Friction Architect", "action": "Calculate switching and integration overhead. Compute the rate of developer learning lost by outsourcing vs internal execution speed."},
+        {"phase": "Phase 3: The 48-Hour Pilot Agent", "agent": "Speed Catalyst", "action": "Launch a manual pilot (using existing third-party tools or mocks) in under 48 hours to establish a baseline performance benchmark."}
+    ],
+    "fundraising": [
+        {"phase": "Phase 1: The Bootstrap Stress-Tester", "agent": "Capital Guardian", "action": "Audit current operational expenses. Determine if cost constraints or workflow optimizations can prolong runway by 6 months without external dilution."},
+        {"phase": "Phase 2: The Dilution Auditor", "agent": "Sovereignty Protector", "action": "Project ownership dilution over 3 funding cycles. Weigh equity dilution cost against the clear acceleration factor of venture funds."},
+        {"phase": "Phase 3: The Narrative Builder", "agent": "Wedge Pitcher", "action": "Draft a one-page capital milestone memo. Target 3 major customers to secure written Letters of Intent (LOIs) before pitching investors."}
+    ],
+    "hiring": [
+        {"phase": "Phase 1: The Friction Isolator", "agent": "Bottleneck Analyst", "action": "Perform a task audit on the bottlenecked workflow. Prove the role cannot be automated, outsourced, or eliminated through simplified requirements."},
+        {"phase": "Phase 2: The Trial Project Director", "agent": "Peer Assessor", "action": "Design a paid 2-week contract project representing real work. Bypass standard multi-stage whiteboard interviews to evaluate candidate execution directly."},
+        {"phase": "Phase 3: The Talent Compounder", "agent": "Bar Keeper", "action": "Require a unanimous yes from the immediate peers of the candidate. Keep technical density high by preventing manager-only hiring decisions."}
+    ],
+    "capital_allocation": [
+        {"phase": "Phase 1: The Downside Capper", "agent": "Inversion Auditor", "action": "Pre-mortem the bet: write the post-mortem of complete loss. Size the capital tranche so that total failure does not threaten corporate survival or brand reputation."},
+        {"phase": "Phase 2: The Compounding Assessor", "agent": "Lease-Time Auditor", "action": "Rank all current initiatives by ROI. Veto projects with non-compounding returns. Consolidate cash for high-leverage bets."},
+        {"phase": "Phase 3: The Exit Criteria Monitor", "agent": "Automated Veto Guard", "action": "Set strict kill triggers. De-allocate capital if the project does not hit its milestones in the first 3 tranches."}
+    ],
+    "execution": [
+        {"phase": "Phase 1: The Door Classifier", "agent": "Reversibility Scout", "action": "Classify the choice: is it a One-Way door (irreversible, high cost) or a Two-Way door (reversible, low cost)?"},
+        {"phase": "Phase 2: The 72-Hour Prototyper", "agent": "Tempo Enforcer", "action": "If reversible, enforce a 10-minute decision constraint. Launch a simplified prototype within 72 hours with 70% of necessary data."},
+        {"phase": "Phase 3: The Feedback Loop Auditor", "agent": "Metric Evaluator", "action": "Monitor day 7 conversion metrics. Kill the experiment immediately if user engagement does not match standard baseline thresholds."}
+    ],
+    "market_strategy": [
+        {"phase": "Phase 1: The Wedge Investigator", "agent": "Pain Auditor", "action": "Interview 5 target customers. Isolate their exact vocabulary for describing their main problem, and use this word-for-word in the headline copy."},
+        {"phase": "Phase 2: The Customer Pull Monitor", "agent": "Retention Guardian", "action": "Validate organic referral. Check if early cohorts are recommending the service without artificial marketing spend."},
+        {"phase": "Phase 3: The Scale Accelerator", "agent": "Distribution Architect", "action": "Only scale distribution budgets after retention loops are stable and referral loops exceed a factor of 1.0."}
+    ],
+    "m_and_a": [
+        {"phase": "Phase 1: The Pre-Mortem Integration Agent", "agent": "Culture Assessor", "action": "Assume the integration fails immediately. Estimate the total cost of key employee attrition and product codebase rewrite."},
+        {"phase": "Phase 2: The Moat Validator", "agent": "Synergy Inspector", "action": "Verify if acquiring the asset boosts pricing power or cost advantages faster than organic developer building."},
+        {"phase": "Phase 3: The Price Cap Guard", "agent": "Negotiation Referee", "action": "Enforce a hard walk-away ceiling. Prevent bidder's ego and transaction momentum from inflating the price."}
+    ],
+    "risk_management": [
+        {"phase": "Phase 1: The Inversion Specialist", "agent": "Doom Analyst", "action": "Identify the top 3 ways this decision results in bankruptcy or catastrophic loss. Focus on leverage traps and legal compliance."},
+        {"phase": "Phase 2: The Redundancy Architect", "agent": "Systemic Shield", "action": "Set up independent backups and capital reserves to ensure survival even in a 1-in-100 year market shock."},
+        {"phase": "Phase 3: The Reputation Gatekeeper", "agent": "Ethics Auditor", "action": "Vet the decision against core reputation. Veto the opportunity if it has regulatory, legal, or ethical vulnerabilities."}
+    ],
+    "general_strategy": [
+        {"phase": "Phase 1: The First Principles Auditor", "agent": "Core Strategist", "action": "Strip away analogies. Break the problem down into its fundamental physics/economic components and build the solution from there."},
+        {"phase": "Phase 2: The Leverage Inspector", "agent": "Scale Architect", "action": "Evaluate the leverage coefficient. Ensure the effort has non-linear upside and compounds over a multi-year horizon."},
+        {"phase": "Phase 3: The Walk-Away Designer", "agent": "Discipline Guard", "action": "Set the explicit boundary conditions for exit before beginning, preventing emotional sunk-cost traps."}
+    ]
+}
+
+BILLIONAIRE_TIME_SAVERS = {
+    "build_vs_buy": "Run a 1-week manual prototype (using simple email or Mechanical Turk) to validate the workflow before coding or buying any software. You will save 90% of development overhead.",
+    "fundraising": "Secure 3 signed customer Letters of Intent (LOIs) showing willingness to pay before pitching a single investor. Genuine customer demand is the ultimate leverage.",
+    "hiring": "Bypass multiple rounds of abstract interviews. Hire candidates for a paid, 3-day contract project simulating the actual role. You will immediately see their real cadence and peer compatibility.",
+    "capital_allocation": "Set micro-budgets that double only when a project meets its explicit customer metrics. Never allocate full project funding upfront.",
+    "execution": "Determine if the decision can be undone. If it is a reversible 'two-way door' decision, make it in under 10 minutes with 70% data and iterate immediately based on feedback.",
+    "market_strategy": "Record customer calls and find the exact words they use to describe their biggest pain. Replace all marketing copy with their direct quotes.",
+    "m_and_a": "Agree on a hard walk-away price in writing with your board BEFORE negotiations begin, and commit to ending the meeting the second the counter-party crosses it.",
+    "risk_management": "Use inversion: write a detailed post-mortem of how the project went bankrupt. Veto the project immediately if any of these failure modes cannot be mitigated.",
+    "general_strategy": "Draft a single-page decision memo detailing the Upside, Downside, Reversibility, and Walk-Away criteria. If it cannot fit on one page, the strategy is too complex."
+}
+
 
 class AnswerSynthesizer:
     def __init__(self, prompt_template_path: Path) -> None:
@@ -78,6 +138,12 @@ class AnswerSynthesizer:
             supporting_cases=[to_supporting_case(scored) for scored in cases],
             trait_scores=aggregate_trait_scores(cases),
             guardrail_note="This is decision support, not a claim that wealth equals wisdom.",
+            agentic_workflow=AGENTIC_WORKFLOWS.get(
+                intent.domain, AGENTIC_WORKFLOWS["general_strategy"]
+            ),
+            billionaire_time_saver=BILLIONAIRE_TIME_SAVERS.get(
+                intent.domain, BILLIONAIRE_TIME_SAVERS["general_strategy"]
+            ),
         )
 
     def build_prompt(self, query: str, retrieval: RetrievalResult) -> str:
@@ -108,6 +174,8 @@ class AnswerSynthesizer:
             supporting_cases=[],
             trait_scores={},
             guardrail_note="BI avoids unsupported specifics when retrieval is empty.",
+            agentic_workflow=[],
+            billionaire_time_saver="Ingest relevant decision cases to synthesize a billionaire workflow."
         )
 
     def _guardrailed_answer(
@@ -135,6 +203,8 @@ class AnswerSynthesizer:
             supporting_cases=[to_supporting_case(scored) for scored in cases],
             trait_scores=aggregate_trait_scores(cases),
             guardrail_note="Guardrail triggered: BI refuses to assist illegal or unethical conduct.",
+            agentic_workflow=[],
+            billionaire_time_saver="Veto the unethical plan entirely. Build a lawful, high-trust model."
         )
 
 

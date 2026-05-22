@@ -16,6 +16,7 @@ export function ChatApp() {
   const [response, setResponse] = useState<ChatResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState<"engine" | "workflow">("engine");
 
   const traitRows = useMemo(() => {
     if (!response) {
@@ -35,7 +36,9 @@ export function ChatApp() {
     setIsLoading(true);
     setError(null);
     try {
-      setResponse(await askBI(trimmed));
+      const res = await askBI(trimmed);
+      setResponse(res);
+      setActiveTab("engine");
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Unable to reach BI API.");
     } finally {
@@ -104,53 +107,101 @@ export function ChatApp() {
         ) : null}
 
         {response ? (
-          <section className="answer-grid">
-            <article className="answer-main">
-              <AnswerSection title="Recommendation" body={response.answer.recommendation} />
-              <ListSection title="Reasoning" items={response.answer.reasoning} />
-              <ListSection title="Trade-offs" items={response.answer.tradeoffs} />
-              <ListSection title="Risks" items={response.answer.risks} />
-              <AnswerSection
-                title="Weak-thinker alternative"
-                body={response.answer.weak_thinker_alternative}
-              />
-              <AnswerSection title="Next step" body={response.answer.next_step} />
-              {response.answer.guardrail_note ? (
-                <p className="guardrail">{response.answer.guardrail_note}</p>
-              ) : null}
-            </article>
+          <>
+            <nav className="tabs" aria-label="Result tabs">
+              <button
+                type="button"
+                className={`tab-button ${activeTab === "engine" ? "active" : ""}`}
+                onClick={() => setActiveTab("engine")}
+                id="tab-decision-engine"
+              >
+                Decision Engine
+              </button>
+              <button
+                type="button"
+                className={`tab-button ${activeTab === "workflow" ? "active" : ""}`}
+                onClick={() => setActiveTab("workflow")}
+                id="tab-agentic-workflow"
+              >
+                Ask for Solution
+              </button>
+            </nav>
 
-            <aside className="answer-side">
-              <div className="intent-box">
-                <span>Classified domain</span>
-                <strong>{String(response.intent.domain ?? "general_strategy")}</strong>
-              </div>
-              <div className="trait-box">
-                <h2>Trait signal</h2>
-                {traitRows.length > 0 ? (
-                  traitRows.map(([trait, value]) => (
-                    <div className="trait-row" key={trait}>
-                      <span>{formatTrait(trait)}</span>
-                      <meter min={1} max={5} value={value} />
-                      <strong>{value.toFixed(1)}</strong>
+            <section className="answer-grid">
+              {activeTab === "engine" ? (
+                <article className="answer-main">
+                  <AnswerSection title="Recommendation" body={response.answer.recommendation} />
+                  <ListSection title="Reasoning" items={response.answer.reasoning} />
+                  <ListSection title="Trade-offs" items={response.answer.tradeoffs} />
+                  <ListSection title="Risks" items={response.answer.risks} />
+                  <AnswerSection
+                    title="Weak-thinker alternative"
+                    body={response.answer.weak_thinker_alternative}
+                  />
+                  <AnswerSection title="Next step" body={response.answer.next_step} />
+                  {response.answer.guardrail_note ? (
+                    <p className="guardrail">{response.answer.guardrail_note}</p>
+                  ) : null}
+                </article>
+              ) : (
+                <article className="workflow-panel">
+                  {response.answer.billionaire_time_saver ? (
+                    <section className="time-saver-card" id="billionaire-time-saver">
+                      <h2 className="time-saver-title">Billionaire Time Saver</h2>
+                      <p>{response.answer.billionaire_time_saver}</p>
+                    </section>
+                  ) : null}
+
+                  <section className="answer-section">
+                    <h2>Agentic Solution Workflow</h2>
+                    <div className="workflow-steps">
+                      {response.answer.agentic_workflow.map((step, idx) => (
+                        <div className="workflow-step" key={idx}>
+                          <div className="workflow-step-num">{idx + 1}</div>
+                          <div className="workflow-step-content">
+                            <h3>{step.phase}</h3>
+                            <span className="workflow-agent">{step.agent}</span>
+                            <p>{step.action}</p>
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  ))
-                ) : (
-                  <p className="muted">No trait scores available yet.</p>
-                )}
-              </div>
-            </aside>
+                  </section>
+                </article>
+              )}
 
-            <section className="supporting-cases">
-              <div className="section-heading">
-                <h2>Supporting cases</h2>
-                <span>{response.retrieved_count} retrieved</span>
-              </div>
-              {response.answer.supporting_cases.map((item) => (
-                <SupportingCaseCard key={item.id} item={item} />
-              ))}
+              <aside className="answer-side">
+                <div className="intent-box">
+                  <span>Classified domain</span>
+                  <strong>{String(response.intent.domain ?? "general_strategy")}</strong>
+                </div>
+                <div className="trait-box">
+                  <h2>Trait signal</h2>
+                  {traitRows.length > 0 ? (
+                    traitRows.map(([trait, value]) => (
+                      <div className="trait-row" key={trait}>
+                        <span>{formatTrait(trait)}</span>
+                        <meter min={1} max={5} value={value} />
+                        <strong>{value.toFixed(1)}</strong>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="muted">No trait scores available yet.</p>
+                  )}
+                </div>
+              </aside>
+
+              <section className="supporting-cases">
+                <div className="section-heading">
+                  <h2>Supporting cases</h2>
+                  <span>{response.retrieved_count} retrieved</span>
+                </div>
+                {response.answer.supporting_cases.map((item) => (
+                  <SupportingCaseCard key={item.id} item={item} />
+                ))}
+              </section>
             </section>
-          </section>
+          </>
         ) : null}
       </section>
     </main>
