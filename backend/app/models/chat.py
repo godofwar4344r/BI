@@ -9,6 +9,7 @@ class ChatRequest(BaseModel):
     query: str = Field(min_length=3, max_length=2000)
     filters: DecisionCaseFilters | None = None
     top_k: int | None = Field(default=None, ge=1, le=12)
+    model: str | None = None
 
 
 class SupportingCase(BaseModel):

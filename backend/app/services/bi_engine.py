@@ -18,12 +18,20 @@ class BIEngine:
         self.analytics = analytics
 
     def answer(self, request: ChatRequest) -> ChatResponse:
+        filters = request.filters
+        if request.model == "elon_musk":
+            from app.models.decision_case import DecisionCaseFilters
+            if filters is None:
+                filters = DecisionCaseFilters(person="Elon Musk")
+            else:
+                filters = filters.model_copy(update={"person": "Elon Musk"})
+
         retrieval_result = self.retrieval.retrieve(
             query=request.query,
-            filters=request.filters,
+            filters=filters,
             top_k=request.top_k,
         )
-        answer = self.synthesizer.synthesize(request.query, retrieval_result)
+        answer = self.synthesizer.synthesize(request.query, retrieval_result, model=request.model)
         event_id = self.analytics.record_chat(
             query=request.query,
             domain=retrieval_result.intent.domain,

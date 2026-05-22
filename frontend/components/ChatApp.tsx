@@ -24,8 +24,29 @@ export function ChatApp() {
   const [activeMessageId, setActiveMessageId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"engine" | "workflow">("engine");
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedModel, setSelectedModel] = useState<"bi_35_flash" | "bi_55_pro" | "elon_musk">("bi_55_pro");
 
   const messageListRef = useRef<HTMLDivElement>(null);
+  const shellRef = useRef<HTMLDivElement>(null);
+
+  // Mouse move tracker to set CSS custom properties for Gemini motion glow
+  useEffect(() => {
+    const shell = shellRef.current;
+    if (!shell) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const rect = shell.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      shell.style.setProperty("--mouse-x", `${x}px`);
+      shell.style.setProperty("--mouse-y", `${y}px`);
+    };
+
+    shell.addEventListener("mousemove", handleMouseMove);
+    return () => {
+      shell.removeEventListener("mousemove", handleMouseMove);
+    };
+  }, []);
 
   // Auto-scroll to bottom of message list on new message or when loading
   useEffect(() => {
@@ -65,14 +86,16 @@ export function ChatApp() {
     setIsLoading(true);
 
     try {
-      const res = await askBI(textToSend);
+      const res = await askBI(textToSend, selectedModel);
       // Add assistant response to history
       setMessages((prev) => [
         ...prev,
         {
           id: assistantMsgId,
           sender: "assistant",
-          text: `I have analyzed the decision pattern. ${res.answer.recommendation.substring(0, 200)}...`,
+          text: selectedModel === "elon_musk"
+            ? `[Elon Simulator] First principles analysis: ${res.answer.recommendation.substring(0, 200)}...`
+            : `I have analyzed the decision pattern. ${res.answer.recommendation.substring(0, 200)}...`,
           response: res
         }
       ]);
@@ -103,7 +126,8 @@ export function ChatApp() {
   }
 
   return (
-    <main className="app-shell">
+    <main ref={shellRef} className="app-shell">
+      <div className="cursor-glow-overlay" />
       <section className="intro">
         <div>
           <p className="product-label">BI</p>
@@ -125,6 +149,42 @@ export function ChatApp() {
           <div className="chat-console-header">
             <h2>Executive Console</h2>
             <span>Connected</span>
+          </div>
+
+          <div className="model-selector-bar" role="tablist" aria-label="Billionaire Intelligence Models">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={selectedModel === "bi_35_flash"}
+              className={`model-selector-btn ${selectedModel === "bi_35_flash" ? "active" : ""}`}
+              onClick={() => setSelectedModel("bi_35_flash")}
+              id="model-35-flash"
+            >
+              <span className="model-name">BI-3.5 Flash</span>
+              <span className="model-desc">Fast Tempo</span>
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={selectedModel === "bi_55_pro"}
+              className={`model-selector-btn ${selectedModel === "bi_55_pro" ? "active" : ""}`}
+              onClick={() => setSelectedModel("bi_55_pro")}
+              id="model-55-pro"
+            >
+              <span className="model-name">BI-5.5 Pro</span>
+              <span className="model-desc">Deep Compounding</span>
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={selectedModel === "elon_musk"}
+              className={`model-selector-btn elon-model-btn ${selectedModel === "elon_musk" ? "active" : ""}`}
+              onClick={() => setSelectedModel("elon_musk")}
+              id="model-elon-musk"
+            >
+              <span className="model-name">Elon Simulator</span>
+              <span className="model-desc">First Principles</span>
+            </button>
           </div>
 
           <div className="message-list" ref={messageListRef}>

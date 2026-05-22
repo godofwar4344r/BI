@@ -111,13 +111,16 @@ class AnswerSynthesizer:
         self.prompt_template_path = prompt_template_path
         self.prompt_template = prompt_template_path.read_text(encoding="utf-8")
 
-    def synthesize(self, query: str, retrieval: RetrievalResult) -> BIAnswer:
+    def synthesize(self, query: str, retrieval: RetrievalResult, model: str | None = None) -> BIAnswer:
         intent = retrieval.intent
         cases = retrieval.cases
         if intent.ethical_risk:
             return self._guardrailed_answer(query=query, intent=intent, cases=cases)
         if not cases:
             return self._empty_answer(query=query, intent=intent)
+
+        if model == "elon_musk":
+            return self._elon_synthesis(query, intent, cases)
 
         top_cases = cases[:3]
         recommendation = DOMAIN_RECOMMENDATIONS.get(intent.domain, DOMAIN_RECOMMENDATIONS["general_strategy"])
@@ -144,6 +147,107 @@ class AnswerSynthesizer:
             billionaire_time_saver=BILLIONAIRE_TIME_SAVERS.get(
                 intent.domain, BILLIONAIRE_TIME_SAVERS["general_strategy"]
             ),
+        )
+
+    def _elon_synthesis(
+        self,
+        query: str,
+        intent: ClassifiedIntent,
+        cases: list[ScoredDecisionCase]
+    ) -> BIAnswer:
+        recs = {
+            "build_vs_buy": "Bring the engineering in-house. Own the technology stack from first principles. Do not pay supplier margins for critical bottlenecks that determine your execution velocity.",
+            "fundraising": "Raise capital aggressively only if you need to build heavy infrastructure (rockets, factories, chips); otherwise, run lean, sleep on the floor, and iterate at extreme speed.",
+            "hiring": "Hire only ultra-dense technical talent. Avoid managers of managers. Every employee must write code, build hardware, or interface directly with the customer. Keep standard overhead low.",
+            "capital_allocation": "Concentrate capital on the highest-leverage bottleneck. Bet the company if the physics and economics of the opportunity compound at scale. Cap downside but tolerate high volatility.",
+            "execution": "Question every requirement, delete steps, go extremely fast on two-way doors, and accept that some things will explode. Iteration tempo is the ultimate competitive advantage.",
+            "market_strategy": "Build a product that is 10x better than the competitor from first principles. Focus on physics limits and engineering superiority; the product narrative will follow the execution.",
+            "m_and_a": "Do not buy other companies to avoid hard engineering work. Only acquire if you get a critical physical asset or core engineering team that you can scale 10x faster.",
+            "risk_management": "Protect downside from absolute bankruptcy, but embrace high technical risks. If you aren't failing occasionally, you aren't innovating enough.",
+            "general_strategy": "Analyze the system from first principles, strip away analogies, establish extreme speed of action, and vertically integrate the core capability."
+        }
+
+        time_savers = {
+            "build_vs_buy": "Insourcing is a superpower. Build the capability in-house using a small, high-density team. You will save millions in supplier markup and iterate 10x faster.",
+            "fundraising": "Only raise when you need to fund heavy capital machinery or deep infrastructure. If you're building software, stay constrained; capital abundance breeds stupidity.",
+            "hiring": "Hire engineers who build things themselves, not managers who talk about building. A single stellar engineer is worth 5 average ones. Test them with a real paid trial project.",
+            "capital_allocation": "Concentrate your bets. Sizing a bet small to avoid failure is a recipe for mediocrity. Go all-in on the critical constraint, and cut underperforming projects immediately.",
+            "execution": "Move fast and break things, especially on reversible choices. Make decisions in under 10 minutes with 70% data. If you aren't failing occasionally, you're moving too slow.",
+            "market_strategy": "Focus 100% of your energy on engineering a superior product. A product that is 10x better sells itself; spend zero dollars on advertising or marketing early on.",
+            "m_and_a": "Acquisitions are highly risky due to cultural debt and integration overhead. Unless you are buying a critical physical resource or highly cohesive engineering team, build it yourself.",
+            "risk_management": "Identify the absolute worst-case scenario (bankruptcy) and ensure it's mathematically capped. For all other technical risks, embrace them and fail fast to learn.",
+            "general_strategy": "Strip away the analogies. Analyze your business bottleneck from first principles, apply 'The Algorithm' to prune requirements, and move at extreme velocity."
+        }
+
+        workflows = {
+            "hiring": [
+                {"phase": "Step 1: Question Requirements", "agent": "Talent Auditor", "action": "Make job requirements less dumb. Question why a degree or years of experience is required. Veto HR checklist bureaucracy."},
+                {"phase": "Step 2: Delete Process", "agent": "Interview Pruner", "action": "Delete standard multi-stage whiteboard interviews. If a step doesn't test real coding or engineering under pressure, prune it immediately."},
+                {"phase": "Step 3: Simplify & Optimize", "agent": "Peer Evaluator", "action": "Simplify the evaluation: design a paid 3-day trial project that mimics the actual work. Rate them only on speed, quality, and direct logic."},
+                {"phase": "Step 4: Accelerate Cycle Time", "agent": "Onboarding Catalyst", "action": "Shorten time-to-hire. Offer the job within 24 hours of trial completion. Get the candidate writing production code on day one."},
+                {"phase": "Step 5: Automate", "agent": "Referral Pipeline", "action": "Automate candidate sourcing through technical leader-driven referrals rather than relying on standard recruiter spam."}
+            ],
+            "build_vs_buy": [
+                {"phase": "Step 1: Question Requirements", "agent": "Moat Auditor", "action": "Identify the actual core bottleneck. Question vendor claims about ease of integration. Separate commodity from core strategic value."},
+                {"phase": "Step 2: Delete Process", "agent": "Dependency Pruner", "action": "Delete unnecessary external middleware dependencies. Build only the minimum needed to control your feedback loops."},
+                {"phase": "Step 3: Simplify & Optimize", "agent": "Architect", "action": "Simplify the database schema or code interface. Optimize the path for maximum developer velocity and minimum API latency."},
+                {"phase": "Step 4: Accelerate Cycle Time", "agent": "Rapid Prototyper", "action": "Build a manual, mock database backend within 48 hours to validate performance. Do not wait months for perfect database schemas."},
+                {"phase": "Step 5: Automate", "agent": "Deployment Automator", "action": "Automate container scaling and replication only after database read/write queries are manually tested and optimized."}
+            ],
+            "execution": [
+                {"phase": "Step 1: Question Requirements", "agent": "Specification Auditor", "action": "Question the design constraints. Every constraint must come with a name; do not accept rules from 'legal' or 'safety' without a specific person taking ownership."},
+                {"phase": "Step 2: Delete Process", "agent": "Bureaucracy Pruner", "action": "Delete signoff processes. If a decision is a two-way door, let the team ship it without executive reviews. If you're not deleting meetings, you're slow."},
+                {"phase": "Step 3: Simplify & Optimize", "agent": "Product Architect", "action": "Simplify the product. Delete features that don't solve the core 80% use case. Optimize for the physical limits of the system."},
+                {"phase": "Step 4: Accelerate Cycle Time", "agent": "Tempo Catalyst", "action": "Establish 24-hour shipping cycles. Sleep on the floor if needed to debug critical blockers. Move faster than competitors can react."},
+                {"phase": "Step 5: Automate", "agent": "CI/CD Automator", "action": "Automate testing and deployment scripts. Do not write automation code until the manual release process is running smoothly."}
+            ]
+        }
+
+        top_cases = cases[:3]
+        recommendation = recs.get(intent.domain, recs["general_strategy"])
+        
+        reasoning = []
+        for scored in top_cases:
+            case = scored.case
+            reasoning.append(f"{case.person}: {case.lesson} (Applying Elon's rule: own the bottleneck and iterate rapidly).")
+        reasoning.append("First principles thinking: Break the problem down to the fundamental truths and reason up from there, rather than copying others by analogy.")
+        reasoning.append("Tempo rule: Iteration velocity is the ultimate constraint. A design that takes 6 months to change is fundamentally broken.")
+
+        tradeoffs = [
+            "Extremely high stress, personal burnout, and sleeping on the factory floor to resolve bottlenecks.",
+            "High risk of public failure and product defects during rapid prototyping cycles.",
+            "Sunk cost risk if you automate too early before stabilizing manual execution.",
+            "Requires absolute dedication; non-mission-aligned employees will exit the organization quickly.",
+            "Fierce resistance from legacy suppliers, incumbents, or regulatory bodies."
+        ]
+
+        risks = [
+            "Blowing up the company (bankruptcy) if your capital runway cannot sustain initial test failures.",
+            "Burnout of key technical talent from sustained high-intensity execution loops.",
+            "Premature optimization or excessive automation introducing unsolvable assembly line bottlenecks.",
+            "Regulatory fine or compliance stoppage due to moving faster than local rules allow."
+        ]
+
+        workflow = workflows.get(intent.domain, [
+            {"phase": "Step 1: Question Requirements", "agent": "First Principles Auditor", "action": "Make the requirements less dumb. Question every constraint. Veto any requirement that cannot be traced back to fundamental physics or basic unit economics."},
+            {"phase": "Step 2: Delete Part/Process", "agent": "Process Deletion Agent", "action": "Delete any step, process, or meeting that isn't absolutely necessary. If you aren't adding deleted items back at least 10% of the time, you aren't deleting enough."},
+            {"phase": "Step 3: Simplify & Optimize", "agent": "Simplification Architect", "action": "Simplify and optimize the remaining design. Never optimize a process or system that should not exist in the first place."},
+            {"phase": "Step 4: Accelerate Cycle Time", "agent": "Cycle Time Catalyst", "action": "Accelerate cycle time. Enforce tight deadlines (e.g. 10x speedup goals) to strip away bureaucracy and force creative engineering breakthroughs."},
+            {"phase": "Step 5: Automate", "agent": "Automation Enforcer", "action": "Automate. Only introduce automated systems or software code after the manual workflow is completely stable and running without friction."}
+        ])
+
+        return BIAnswer(
+            recommendation=recommendation,
+            reasoning=reasoning,
+            tradeoffs=tradeoffs,
+            risks=risks,
+            weak_thinker_alternative="Reasoning by analogy, hiring expensive consultants to write slides, waiting for complete market certainty, or outsourcing the core constraint to suppliers.",
+            next_step="Apply 'The Algorithm': Question requirements, delete processes, simplify/optimize, accelerate cycle time, and then automate.",
+            supporting_cases=[to_supporting_case(scored) for scored in cases],
+            trait_scores=aggregate_trait_scores(cases),
+            guardrail_note="Elon Musk Simulation Mode: Simulating first-principles thinking and extreme execution intensity.",
+            agentic_workflow=workflow,
+            billionaire_time_saver=time_savers.get(intent.domain, time_savers["general_strategy"]),
         )
 
     def build_prompt(self, query: str, retrieval: RetrievalResult) -> str:

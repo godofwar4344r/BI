@@ -1038,3 +1038,115 @@ meter::-webkit-meter-value {
   }
 }
 
+/* Gemini Motion Glow & Model Selector Styling */
+
+.cursor-glow-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(
+    600px circle at var(--mouse-x, 50%) var(--mouse-y, 200px),
+    rgba(212, 175, 55, 0.05) 0%,
+    rgba(16, 18, 14, 0) 80%
+  );
+  pointer-events: none;
+  z-index: 1;
+}
+
+.model-selector-bar {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  background: rgba(16, 18, 14, 0.4);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 4px;
+  margin-bottom: 20px;
+}
+
+.model-selector-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 12px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.model-selector-btn:hover {
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text);
+  transform: translateY(-1px) scale(1.02);
+}
+
+.model-selector-btn.active {
+  background: rgba(212, 175, 55, 0.08);
+  border-color: rgba(212, 175, 55, 0.25);
+  color: var(--accent);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.model-name {
+  font-family: var(--font-heading);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+.model-desc {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  opacity: 0.6;
+  margin-top: 2px;
+}
+
+.elon-model-btn.active {
+  background: radial-gradient(circle at center, rgba(212, 175, 55, 0.15) 0%, rgba(212, 175, 55, 0.05) 100%);
+  border-color: var(--accent);
+  box-shadow: 0 0 15px rgba(212, 175, 55, 0.15);
+  color: #fff;
+  text-shadow: 0 0 8px rgba(212, 175, 55, 0.5);
+}
+
+/* Glassmorphic Card Motion Enhancements */
+.case-card,
+.workflow-step-content,
+.time-saver-card,
+.example-button,
+.intent-box,
+.trait-box {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+
+/* Custom glow borders that follow cursor position */
+.case-card:hover,
+.workflow-step-content:hover,
+.time-saver-card:hover {
+  transform: translateY(-4px) scale(1.005);
+  border-color: rgba(212, 175, 55, 0.35);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6), 0 0 20px rgba(212, 175, 55, 0.05);
+  background: rgba(22, 26, 19, 0.7);
+}
+
+/* Soft transition of text and elements on hover */
+.case-card *,
+.workflow-step-content *,
+.time-saver-card * {
+  transition: color 0.3s ease;
+}
+
+.case-card:hover h3,
+.workflow-step-content:hover h3 {
+  color: #fff;
+}
+

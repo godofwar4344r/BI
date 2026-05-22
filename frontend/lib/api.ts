@@ -2,13 +2,13 @@ import type { ChatResponse } from "./types";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
 
-export async function askBI(query: string): Promise<ChatResponse> {
+export async function askBI(query: string, model?: string): Promise<ChatResponse> {
   const response = await fetch(`${API_BASE_URL}/chat`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json"
     },
-    body: JSON.stringify({ query })
+    body: JSON.stringify({ query, model })
   });
 
   if (!response.ok) {
