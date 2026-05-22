@@ -1,8 +1,15 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useMemo, useState, useRef, useEffect } from "react";
 import { askBI } from "@/lib/api";
 import type { ChatResponse, SupportingCase } from "@/lib/types";
+
+type Message = {
+  id: string;
+  sender: "user" | "assistant";
+  text: string;
+  response?: ChatResponse;
+};
 
 const EXAMPLES = [
   "Should I bootstrap longer or raise a seed round now?",
@@ -13,37 +20,86 @@ const EXAMPLES = [
 
 export function ChatApp() {
   const [query, setQuery] = useState("");
-  const [response, setResponse] = useState<ChatResponse | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [activeMessageId, setActiveMessageId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"engine" | "workflow">("engine");
+  const [isLoading, setIsLoading] = useState(false);
+
+  const messageListRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to bottom of message list on new message or when loading
+  useEffect(() => {
+    if (messageListRef.current) {
+      messageListRef.current.scrollTop = messageListRef.current.scrollHeight;
+    }
+  }, [messages, isLoading]);
+
+  // Find the currently active assistant response
+  const activeResponse = useMemo(() => {
+    if (!activeMessageId) return null;
+    const msg = messages.find((m) => m.id === activeMessageId);
+    return msg?.response ?? null;
+  }, [messages, activeMessageId]);
 
   const traitRows = useMemo(() => {
-    if (!response) {
+    if (!activeResponse) {
       return [];
     }
-    return Object.entries(response.answer.trait_scores)
+    return Object.entries(activeResponse.answer.trait_scores)
       .sort(([, left], [, right]) => right - left)
       .slice(0, 8);
-  }, [response]);
+  }, [activeResponse]);
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const trimmed = query.trim();
-    if (!trimmed) {
-      return;
-    }
+  async function handleSendMessage(textToSend: string) {
+    if (isLoading) return;
+    
+    const userMsgId = `user-${Date.now()}`;
+    const assistantMsgId = `assistant-${Date.now()}`;
+
+    // Add user message to history
+    setMessages((prev) => [
+      ...prev,
+      { id: userMsgId, sender: "user", text: textToSend }
+    ]);
+    
     setIsLoading(true);
-    setError(null);
+
     try {
-      const res = await askBI(trimmed);
-      setResponse(res);
-      setActiveTab("engine");
+      const res = await askBI(textToSend);
+      // Add assistant response to history
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: assistantMsgId,
+          sender: "assistant",
+          text: `I have analyzed the decision pattern. ${res.answer.recommendation.substring(0, 200)}...`,
+          response: res
+        }
+      ]);
+      setActiveMessageId(assistantMsgId);
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Unable to reach BI API.");
+      const errMsg = caught instanceof Error ? caught.message : "Unable to reach BI API.";
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: assistantMsgId,
+          sender: "assistant",
+          text: `Unable to reach the BI Engine. Error: ${errMsg}`
+        }
+      ]);
     } finally {
       setIsLoading(false);
     }
+  }
+
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const trimmed = query.trim();
+    if (!trimmed || isLoading) {
+      return;
+    }
+    setQuery("");
+    handleSendMessage(trimmed);
   }
 
   return (
@@ -53,7 +109,7 @@ export function ChatApp() {
           <p className="product-label">BI</p>
           <h1>Billionaire Intelligence</h1>
           <p className="intro-copy">
-            A decision-pattern engine for capital allocation, leverage, risk, hiring,
+            A conversational decision-pattern engine for capital allocation, leverage, risk, hiring,
             execution, compounding, and market judgment.
           </p>
         </div>
@@ -63,146 +119,219 @@ export function ChatApp() {
         </div>
       </section>
 
-      <section className="workspace">
-        <form className="ask-panel" onSubmit={handleSubmit}>
-          <label htmlFor="query">Decision question</label>
-          <textarea
-            id="query"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="What would a top founder or investor do here?"
-            rows={5}
-          />
-          <div className="ask-actions">
-            <button type="submit" disabled={isLoading || query.trim().length < 3}>
-              {isLoading ? "Thinking..." : "Ask BI"}
-            </button>
-            <span>Returns recommendation, trade-offs, risks, and evidence.</span>
+      <section className="chat-layout">
+        {/* Left Column: Chat Console */}
+        <div className="chat-console">
+          <div className="chat-console-header">
+            <h2>Executive Console</h2>
+            <span>Connected</span>
           </div>
-        </form>
 
-        <div className="examples" aria-label="Example prompts">
-          {EXAMPLES.map((example) => (
-            <button
-              type="button"
-              key={example}
-              onClick={() => setQuery(example)}
-              className="example-button"
-            >
-              {example}
-            </button>
-          ))}
+          <div className="message-list" ref={messageListRef}>
+            {messages.length === 0 ? (
+              <section className="empty-state" style={{ border: 0, background: "transparent", boxShadow: "none", padding: "24px 0 0" }}>
+                <h2>Conversational Assistant Idle</h2>
+                <p style={{ marginBottom: "24px" }}>
+                  Ask a concrete decision question. BI will retrieve sourced cases, rank trait signals,
+                  and synthesize an agentic workflow in the dashboard on the right.
+                </p>
+                <div className="examples" style={{ gridTemplateColumns: "1fr", gap: "10px" }} aria-label="Example prompts">
+                  {EXAMPLES.map((example) => (
+                    <button
+                      type="button"
+                      key={example}
+                      onClick={() => handleSendMessage(example)}
+                      className="example-button"
+                      style={{ minHeight: "auto", padding: "12px 16px" }}
+                    >
+                      {example}
+                    </button>
+                  ))}
+                </div>
+              </section>
+            ) : (
+              messages.map((msg) => {
+                const isUser = msg.sender === "user";
+                const isAssistant = msg.sender === "assistant";
+                const isSelected = msg.id === activeMessageId;
+                const hasDetails = !!msg.response;
+
+                return (
+                  <div
+                    key={msg.id}
+                    className={`message-item ${msg.sender} ${
+                      isAssistant && hasDetails ? "interactive-select" : ""
+                    } ${isSelected ? "active-message" : ""}`}
+                    onClick={() => {
+                      if (isAssistant && hasDetails) {
+                        setActiveMessageId(msg.id);
+                      }
+                    }}
+                  >
+                    <span className="message-sender">
+                      {isUser ? "You" : "BI Engine"}
+                    </span>
+                    <div className="message-bubble">
+                      <p style={{ margin: 0 }}>{msg.text}</p>
+                      {isAssistant && msg.response?.answer.billionaire_time_saver && (
+                        <div className="message-time-saver-bubble">
+                          💡 Time Saver: {msg.response.answer.billionaire_time_saver.split(".")[0]}.
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })
+            )}
+
+            {isLoading && (
+              <div className="message-item assistant">
+                <span className="message-sender">BI Engine</span>
+                <div className="message-bubble">
+                  <div className="message-loader">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <form className="chat-input-panel" onSubmit={handleSubmit}>
+            <div className="chat-input-wrapper">
+              <input
+                type="text"
+                className="chat-input-field"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Ask about a trade-off, raise vs bootstrap, acquire vs grow..."
+                disabled={isLoading}
+              />
+              <button
+                type="submit"
+                className="chat-send-button"
+                disabled={isLoading || query.trim().length < 3}
+                aria-label="Send message"
+              >
+                <svg viewBox="0 0 24 24">
+                  <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+                </svg>
+              </button>
+            </div>
+          </form>
         </div>
 
-        {error ? <div className="error-state">{error}</div> : null}
+        {/* Right Column: Executive Dashboard */}
+        <div className="dashboard-panel">
+          {!activeResponse ? (
+            <div className="dashboard-empty">
+              <svg fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
+              </svg>
+              <h3>Executive Dashboard</h3>
+              <p>
+                Submit a query in the chat console. The synthesized decision pattern, agentic workflow, and supporting cases will display here.
+              </p>
+            </div>
+          ) : (
+            <>
+              <nav className="tabs" aria-label="Result tabs" style={{ marginBottom: "16px" }}>
+                <button
+                  type="button"
+                  className={`tab-button ${activeTab === "engine" ? "active" : ""}`}
+                  onClick={() => setActiveTab("engine")}
+                  id="tab-decision-engine"
+                >
+                  Decision Engine
+                </button>
+                <button
+                  type="button"
+                  className={`tab-button ${activeTab === "workflow" ? "active" : ""}`}
+                  onClick={() => setActiveTab("workflow")}
+                  id="tab-agentic-workflow"
+                >
+                  Ask for Solution
+                </button>
+              </nav>
 
-        {!response && !error ? (
-          <section className="empty-state">
-            <h2>Ask a concrete decision question.</h2>
-            <p>
-              BI retrieves sourced decision cases, ranks trait patterns, and keeps the
-              answer grounded in supporting evidence.
-            </p>
-          </section>
-        ) : null}
+              <section className="answer-grid" style={{ gridTemplateColumns: "1fr", gap: "24px" }}>
+                {activeTab === "engine" ? (
+                  <article className="answer-main">
+                    <AnswerSection title="Recommendation" body={activeResponse.answer.recommendation} />
+                    <ListSection title="Reasoning" items={activeResponse.answer.reasoning} />
+                    <ListSection title="Trade-offs" items={activeResponse.answer.tradeoffs} />
+                    <ListSection title="Risks" items={activeResponse.answer.risks} />
+                    <AnswerSection
+                      title="Weak-thinker alternative"
+                      body={activeResponse.answer.weak_thinker_alternative}
+                    />
+                    <AnswerSection title="Next step" body={activeResponse.answer.next_step} />
+                    {activeResponse.answer.guardrail_note ? (
+                      <p className="guardrail">{activeResponse.answer.guardrail_note}</p>
+                    ) : null}
+                  </article>
+                ) : (
+                  <article className="workflow-panel">
+                    {activeResponse.answer.billionaire_time_saver ? (
+                      <section className="time-saver-card" id="billionaire-time-saver">
+                        <h2 className="time-saver-title">Billionaire Time Saver</h2>
+                        <p>{activeResponse.answer.billionaire_time_saver}</p>
+                      </section>
+                    ) : null}
 
-        {response ? (
-          <>
-            <nav className="tabs" aria-label="Result tabs">
-              <button
-                type="button"
-                className={`tab-button ${activeTab === "engine" ? "active" : ""}`}
-                onClick={() => setActiveTab("engine")}
-                id="tab-decision-engine"
-              >
-                Decision Engine
-              </button>
-              <button
-                type="button"
-                className={`tab-button ${activeTab === "workflow" ? "active" : ""}`}
-                onClick={() => setActiveTab("workflow")}
-                id="tab-agentic-workflow"
-              >
-                Ask for Solution
-              </button>
-            </nav>
-
-            <section className="answer-grid">
-              {activeTab === "engine" ? (
-                <article className="answer-main">
-                  <AnswerSection title="Recommendation" body={response.answer.recommendation} />
-                  <ListSection title="Reasoning" items={response.answer.reasoning} />
-                  <ListSection title="Trade-offs" items={response.answer.tradeoffs} />
-                  <ListSection title="Risks" items={response.answer.risks} />
-                  <AnswerSection
-                    title="Weak-thinker alternative"
-                    body={response.answer.weak_thinker_alternative}
-                  />
-                  <AnswerSection title="Next step" body={response.answer.next_step} />
-                  {response.answer.guardrail_note ? (
-                    <p className="guardrail">{response.answer.guardrail_note}</p>
-                  ) : null}
-                </article>
-              ) : (
-                <article className="workflow-panel">
-                  {response.answer.billionaire_time_saver ? (
-                    <section className="time-saver-card" id="billionaire-time-saver">
-                      <h2 className="time-saver-title">Billionaire Time Saver</h2>
-                      <p>{response.answer.billionaire_time_saver}</p>
-                    </section>
-                  ) : null}
-
-                  <section className="answer-section">
-                    <h2>Agentic Solution Workflow</h2>
-                    <div className="workflow-steps">
-                      {response.answer.agentic_workflow.map((step, idx) => (
-                        <div className="workflow-step" key={idx}>
-                          <div className="workflow-step-num">{idx + 1}</div>
-                          <div className="workflow-step-content">
-                            <h3>{step.phase}</h3>
-                            <span className="workflow-agent">{step.agent}</span>
-                            <p>{step.action}</p>
+                    <section className="answer-section">
+                      <h2>Agentic Solution Workflow</h2>
+                      <div className="workflow-steps">
+                        {activeResponse.answer.agentic_workflow.map((step, idx) => (
+                          <div className="workflow-step" key={idx}>
+                            <div className="workflow-step-num">{idx + 1}</div>
+                            <div className="workflow-step-content">
+                              <h3>{step.phase}</h3>
+                              <span className="workflow-agent">{step.agent}</span>
+                              <p>{step.action}</p>
+                            </div>
                           </div>
-                        </div>
-                      ))}
-                    </div>
-                  </section>
-                </article>
-              )}
-
-              <aside className="answer-side">
-                <div className="intent-box">
-                  <span>Classified domain</span>
-                  <strong>{String(response.intent.domain ?? "general_strategy")}</strong>
-                </div>
-                <div className="trait-box">
-                  <h2>Trait signal</h2>
-                  {traitRows.length > 0 ? (
-                    traitRows.map(([trait, value]) => (
-                      <div className="trait-row" key={trait}>
-                        <span>{formatTrait(trait)}</span>
-                        <meter min={1} max={5} value={value} />
-                        <strong>{value.toFixed(1)}</strong>
+                        ))}
                       </div>
-                    ))
-                  ) : (
-                    <p className="muted">No trait scores available yet.</p>
-                  )}
-                </div>
-              </aside>
+                    </section>
+                  </article>
+                )}
 
-              <section className="supporting-cases">
-                <div className="section-heading">
-                  <h2>Supporting cases</h2>
-                  <span>{response.retrieved_count} retrieved</span>
-                </div>
-                {response.answer.supporting_cases.map((item) => (
-                  <SupportingCaseCard key={item.id} item={item} />
-                ))}
+                <aside className="answer-side" style={{ display: "grid", gridTemplateColumns: "1fr 1fr" }}>
+                  <div className="intent-box" style={{ gridColumn: "1 / -1" }}>
+                    <span>Classified domain</span>
+                    <strong>{String(activeResponse.intent.domain ?? "general_strategy")}</strong>
+                  </div>
+                  <div className="trait-box" style={{ gridColumn: "1 / -1" }}>
+                    <h2>Trait signal</h2>
+                    {traitRows.length > 0 ? (
+                      traitRows.map(([trait, value]) => (
+                        <div className="trait-row" key={trait}>
+                          <span>{formatTrait(trait)}</span>
+                          <meter min={1} max={5} value={value} />
+                          <strong>{value.toFixed(1)}</strong>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="muted">No trait scores available yet.</p>
+                    )}
+                  </div>
+                </aside>
+
+                <section className="supporting-cases">
+                  <div className="section-heading">
+                    <h2>Supporting cases</h2>
+                    <span>{activeResponse.retrieved_count} retrieved</span>
+                  </div>
+                  {activeResponse.answer.supporting_cases.map((item) => (
+                    <SupportingCaseCard key={item.id} item={item} />
+                  ))}
+                </section>
               </section>
-            </section>
-          </>
-        ) : null}
+            </>
+          )}
+        </div>
       </section>
     </main>
   );
